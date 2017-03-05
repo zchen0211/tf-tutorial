@@ -1,6 +1,7 @@
 import tensorflow as tf
 
 
+### study of tf.control_dependencies()
 a = tf.get_variable('a', [], dtype=tf.float32)
 b = tf.get_variable('b', [], dtype=tf.float32)
 c = tf.get_variable('c', [], dtype=tf.float32)
@@ -27,3 +28,16 @@ sess.run(assign_c)
 print sess.run(a)
 print sess.run(b)
 print sess.run(c)
+
+### condition and select
+abs_a = tf.abs(a)
+condition = tf.less(a, 1.0)
+print sess.run(condition)
+
+small_a = tf.constant(-2.0)
+big_a = tf.constant(2.0)
+# final_a = tf.select(condition, small_a, big_a)
+# final_a = tf.case([(condition,small_a)], default=big_a)
+# final_a = tf.case([(tf.less(2.0, 1.0),small_a)], default=big_a)
+final_a = tf.cond(condition, lambda: small_a, lambda: big_a)
+print sess.run(final_a)
