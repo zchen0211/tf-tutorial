@@ -34,10 +34,15 @@ abs_a = tf.abs(a)
 condition = tf.less(a, 1.0)
 print sess.run(condition)
 
-small_a = tf.constant(-2.0)
-big_a = tf.constant(2.0)
+small_a = lambda: tf.constant(-2.0)
+big_a = lambda: tf.constant(2.0)
+
+# tf.select has deprecated.
 # final_a = tf.select(condition, small_a, big_a)
-# final_a = tf.case([(condition,small_a)], default=big_a)
-# final_a = tf.case([(tf.less(2.0, 1.0),small_a)], default=big_a)
-final_a = tf.cond(condition, lambda: small_a, lambda: big_a)
+
+# This is correct
+final_a = tf.case([(condition,small_a)], default=big_a)
+
+# This is correct
+# final_a = tf.cond(condition, small_a, big_a)
 print sess.run(final_a)
