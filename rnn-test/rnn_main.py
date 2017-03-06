@@ -22,10 +22,14 @@ input_unpack = tf.unstack(tf.transpose(input_, perm=[1,0,2]))
 init_state = cell_lstm.zero_state(batch_size=batch_size, dtype=tf.float32)
 
 # outputs_rnn: a list of length = T, each of shape [batch_size, cell_size]
-# outputs_rnn will have all 0s for unvalid sequence
+# outputs_rnn will have all 0s for unvalid sequence length
+# state is a correct tuple computed up to valid length
+# state[0]: final memory cell [batch_size, cell_size] c
+# state[1]: final output [batch_size, cell_size] h
+
 outputs_rnn, state = tf.contrib.rnn.static_rnn(cell_lstm, input_unpack, initial_state=init_state, 
                                sequence_length=[3,4,3])
-
+log.info('state: %s' % type(state))
 # loss should be computed with mask like: loss * mask_flag
 # or with tf.contrib.legacy_seq2seq.sequence_loss_by_example([logits], [target], [weight])
 
@@ -40,9 +44,13 @@ sess = tf.Session()
 sess.run(tf.global_variables_initializer())
 # summary_writer = tf.summary.FileWriter('.', sess.graph)'''
 
-outputs_np = sess.run(output, feed_dict={input_: input_np_})
+outputs_np, state_np = sess.run([output, state], feed_dict={input_: input_np_})
+log.info('output of rnn')
 print outputs_np
 # print outputs_np[0].shape
+log.info('state:')
+print 'c:', state_np[0]
+print 'h:', state_np[1]
 
 # Following lines will print nothing if only cell is declared,
 # since it is not created during declaration
