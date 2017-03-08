@@ -8,6 +8,7 @@ batch_size = 10
 dim = 3
 
 sample_x_flag = True
+sample_w_true_flag = True
 
 tf.set_random_seed(1)
 
@@ -20,10 +21,13 @@ Ws = tf.get_variable('Ws', dtype=tf.float32, initializer = np.identity(dim).asty
 transform = tf.constant(np_transform, dtype=tf.float32)
 Wf = tf.get_variable('Wf', shape=[dim, 1], dtype=tf.float32, trainable=True) 
 
-W_true = tf.get_variable('W_true', shape=[dim, 1], dtype=tf.float32, trainable=False)
+if sample_w_true_flag:
+  W_true = tf.placeholder(tf.float32, shape=[dim, 1])
+else:
+  W_true = tf.get_variable('W_true', shape=[dim, 1], dtype=tf.float32, trainable=False)
     
 if sample_x_flag:
-  log.info('sampled')
+  log.info('sampled x')
   x = tf.placeholder(tf.float32, shape=[batch_size, dim])
 else:
   x = tf.get_variable('x', shape=[batch_size, dim], dtype=tf.float32, trainable=False)
@@ -70,17 +74,18 @@ sess.run(tf.global_variables_initializer())
 print 'true whitening:', np_transform_inv
 print 'true param:', sess.run(W_true)
 
+W_true_np = np.random.normal(size=[dim, 1]).astype(np.float32)
 for i in range(500):
   xnp = np.random.normal(size=[batch_size,dim]).astype(np.float32)
   # print 'fast var before update:', sess.run(Wf)
   # log.info('fast_grad')
   # print sess.run(grad_fast, feed_dict={x: xnp})
-  sess.run(fast_op, feed_dict={x: xnp})
+  sess.run(fast_op, feed_dict={x: xnp, W_true:W_true_np})
   # print 'fast var', sess.run(Wf, feed_dict={x:xnp})
-  sess.run(slow_op, feed_dict={x: xnp})
+  sess.run(slow_op, feed_dict={x: xnp, W_true:W_true_np})
   # print sess.run(y_eps)
   if i % 10 == 0:
-    log.info('step %d, loss: %f' % (i,sess.run(loss, feed_dict={x:xnp}))) #, feed_dict={y_eps: y_eps_np})
+    log.info('step %d, loss: %f' % (i,sess.run(loss, feed_dict={x:xnp, W_true:W_true_np}))) #, feed_dict={y_eps: y_eps_np})
   if (i+1) % 100 == 0:
     print 'slow learner', sess.run(Ws)
     print 'fast learner', sess.run(Wf)
