@@ -3,11 +3,11 @@ import glog as log
 
 
 # problem
-batch_size = 100000
+batch_size = 1 # 100000
 dim = 3
 sgd_step = 1
-sample_step = 50000
-visualize_step = 50
+sample_step = 1 # 50000
+visualize_step = 1 # 50
 
 lr_fast = 1e-1
 lr_slow = 1e-3
