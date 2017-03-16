@@ -8,10 +8,12 @@ tf.app.flags.DEFINE_integer('batch_size', 10, 'batch_size')
 tf.app.flags.DEFINE_integer('dim', 3, 'problem dimension')
 tf.app.flags.DEFINE_integer('sgd_step', 1, 'problem dimension')
 tf.app.flags.DEFINE_float('lr_fast', 2e-1, 'lr of fast learner')
-tf.app.flags.DEFINE_float('lr_slow', 1e-3, 'lr of slow learner')
-tf.app.flags.DEFINE_integer('sample_step', 1000000, 'epochs')
+tf.app.flags.DEFINE_float('lr_slow', 2e-3, 'lr of slow learner')
+tf.app.flags.DEFINE_integer('sample_step', 5000000, 'epochs')
 tf.app.flags.DEFINE_integer('visualize_step', 500, 'print inteval')
 tf.app.flags.DEFINE_integer('gpu_id', 1, 'number of gpus')
+tf.app.flags.DEFINE_string('opt', 'sgd', 'optimization method, sgd or momentum')
+
 
 # problem
 visualize_step = 500 # 100
@@ -116,8 +118,12 @@ def main(_):
       fast_op = optimizer_f.apply_gradients(zip([grad_fast], [Wf]))
       slow_op = optimizer_s.apply_gradients(zip([grad_slow], [Ws]))
     else:
-      optimizer_s = tf.train.GradientDescentOptimizer(lr_slow)
-      # optimizer_s = tf.train.MomentumOptimizer(lr_slow, 0.9)
+      if FLAGS.opt == 'sgd':
+        optimizer_s = tf.train.GradientDescentOptimizer(lr_slow)
+      elif FLAGS.opt == 'momentum':
+        optimizer_s = tf.train.MomentumOptimizer(lr_slow, 0.9)
+      else:
+        raise 'Unknown Optimization Methods!'
       # Phase 1: Compute gradient
       grad_slow = optimizer_s.compute_gradients(loss_new, [Ws])
       grad_slow, _ = grad_slow[0]
@@ -134,7 +140,8 @@ def main(_):
 
     True_sigma = np.matmul(np_transform, np.transpose(np_transform))
     True_sigma_inv = np.linalg.inv(True_sigma)
-
+    True_sigma_reg = True_sigma + np.trace(True_sigma) / float(batch_size) * np.identity(dim)
+    True_sigma_inv_reg = np.linalg.inv(True_sigma_reg)
 
     for sample_w in range(sample_step):
       W_true_np = np.random.normal(size=[1, dim]).astype(np.float32)
@@ -188,8 +195,8 @@ def main(_):
 
           print 'Ws^T * Ws'
           print np.matmul(np.transpose(Ws_np), Ws_np)
-          print 'True Sigma inv / eta (theoretical bound):'
-          print True_sigma_inv / lr_fast
+          print 'True Sigma inv with regularization / eta (theoretical bound):'
+          print True_sigma_inv_reg / lr_fast
         
     # print 'In comparison with the slow learner, the true whitening:', np_transform_inv
     sess.close()
