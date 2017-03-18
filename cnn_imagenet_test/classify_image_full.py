@@ -211,17 +211,13 @@ if __name__ == '__main__':
   # softmax_tensor = sess.graph.get_tensor_by_name('InceptionV3/softmax:0')
 
   sess = tf.Session()
+  sess.run(tf.global_variables_initializer())
   
   # setup initialization
   saver = tf.train.Saver(inception_variables)
   # saver.restore(sess, FLAGS.ckpt)
   saver.restore(sess, '../inception_v3.ckpt')
 
-  sess.run(tf.global_variables_initializer())
-
-  for var in inception_variables:
-    if var.name == 'InceptionV3/Mixed_7c/Branch_3/Conv2d_0b_1x1/BatchNorm/moving_mean:0':
-      print(sess.run(var))
   '''
   data = {}
   for var in inception_variables:
@@ -232,8 +228,7 @@ if __name__ == '__main__':
   # sess.run(init_fn)
   '''
 
-  '''
-  logits_np = np.squeeze(sess.run(prediction))
+  logits_np = np.squeeze(sess.run(logits))
 
   top_k = logits_np.argsort()[-5:][::-1]
 	
@@ -241,7 +236,6 @@ if __name__ == '__main__':
     human_string = node_lookup.id_to_string(node_id)
     score = logits_np[node_id]
     print('%s (score = %.5f)' % (human_string, score))
-  '''
 
   '''
   print sess.run(image)
