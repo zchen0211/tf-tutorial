@@ -1,0 +1,1 @@
+../../../models/tutorials/image/imagenet/classify_image_graph_def.pb
