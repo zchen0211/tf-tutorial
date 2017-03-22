@@ -1,4 +1,8 @@
+# Material comes from 
+# https://www.tensorflow.org/programmers_guide/threading_and_queues
+
 import tensorflow as tf
+import glog as log
 
 
 q = tf.FIFOQueue(3, 'float')
@@ -17,6 +21,8 @@ sess.run(q_inc)
 sess.run(q_inc)
 sess.run(q_inc)
 sess.run(q_inc)
+# log.info('Queue size: %d' % q.size())
+print 'Queue size: ', q.size()
 
 # dequeue a tensor, use dequeue_many(n) to return n tensors
 z = q.dequeue()
