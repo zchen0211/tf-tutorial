@@ -1,14 +1,19 @@
 import gym
 
 
+step = 0
+
 env = gym.make('Breakout-v0')
+
+# env.action_space
+
 # env = gym.make("Taxi-v2")
 # env = gym.make('CartPole-v0')
 
 # observation = env.reset()
 env.reset()
 
-for _ in range(1000):
+for _ in range(step):
   # for visualization
   env.render()
 
