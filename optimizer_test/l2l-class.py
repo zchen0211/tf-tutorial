@@ -8,7 +8,7 @@ tf.app.flags.DEFINE_integer('batch_size', 10000, 'batch_size')
 tf.app.flags.DEFINE_integer('dim', 3, 'problem dimension')
 tf.app.flags.DEFINE_integer('sgd_step', 1, 'problem dimension')
 tf.app.flags.DEFINE_float('lr_fast', 2e-1, 'lr of fast learner')
-tf.app.flags.DEFINE_float('lr_slow', 1e-2, 'lr of slow learner')
+tf.app.flags.DEFINE_float('lr_slow', 3e-2, 'lr of slow learner')
 tf.app.flags.DEFINE_integer('sample_step', 100000, 'epochs') # 5000000
 tf.app.flags.DEFINE_integer('visualize_step', 500, 'print inteval') # 500
 tf.app.flags.DEFINE_integer('gpu_id', 1, 'number of gpus')
