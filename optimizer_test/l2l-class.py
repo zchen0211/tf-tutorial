@@ -4,13 +4,13 @@ import glog as log
 
 
 FLAGS = tf.app.flags.FLAGS
-tf.app.flags.DEFINE_integer('batch_size', 10, 'batch_size')
+tf.app.flags.DEFINE_integer('batch_size', 10000, 'batch_size')
 tf.app.flags.DEFINE_integer('dim', 3, 'problem dimension')
 tf.app.flags.DEFINE_integer('sgd_step', 1, 'problem dimension')
 tf.app.flags.DEFINE_float('lr_fast', 2e-1, 'lr of fast learner')
-tf.app.flags.DEFINE_float('lr_slow', 2e-3, 'lr of slow learner')
-tf.app.flags.DEFINE_integer('sample_step', 5000000, 'epochs')
-tf.app.flags.DEFINE_integer('visualize_step', 500, 'print inteval')
+tf.app.flags.DEFINE_float('lr_slow', 1e-2, 'lr of slow learner')
+tf.app.flags.DEFINE_integer('sample_step', 100000, 'epochs') # 5000000
+tf.app.flags.DEFINE_integer('visualize_step', 500, 'print inteval') # 500
 tf.app.flags.DEFINE_integer('gpu_id', 1, 'number of gpus')
 tf.app.flags.DEFINE_string('opt', 'sgd', 'optimization method, sgd or momentum')
 
@@ -80,6 +80,7 @@ def main(_):
     x_transform1 = tf.matmul(transform, x1)  # [dim, N]
     x_pos1, x_neg1 = tf.split(x_transform1, num_or_size_splits=2, axis=1)
     bias = tf.tile(mu, [1, batch_size/2])
+    x_pos1 = x_pos1 - bias
     x_neg1 = x_neg1 + bias
     x_raw1 = tf.concat([x_pos1, x_neg1], axis=1)
 
@@ -96,48 +97,34 @@ def main(_):
       loss = sigmoid_loss(y_true, y_pred)
 
     # Wf update
-    # grads_Wf = tf.gradients(loss, [Wf])
-    # grads_Wf = grads_Wf[0]
+    grads_Wf = tf.gradients(loss, [Wf])
+    grads_Wf = grads_Wf[0]
 
     # Step 2: slow learner update from x2
-    '''
+    
     with tf.name_scope('graph2'):
       Wf_new = - lr_fast * grads_Wf
       # Wf_new = lr_fast * tf.transpose(tf.matmul(tf.matmul(Ws, x_transform1), tf.transpose(y_true)))
       with tf.name_scope('loss_fast_update'):
         loss_old_update = sigmoid_loss(y_true, tf.matmul(Wf_new, tf.matmul(Ws, x_raw1)))
 
-      # Step 2.1
+      # Step 2.1 new problem
       x_transform2 = tf.matmul(transform, x2)  # [dim, N]
-      x_pos2, x_neg2 = tf.split(x_transform2, axis=1)
+      x_pos2, x_neg2 = tf.split(x_transform2, num_or_size_splits=2, axis=1)
       bias = tf.tile(mu, [1, batch_size/2])
+      x_pos2 = x_pos2 - bias
       x_neg2 = x_neg2 + bias
-      x_raw2 = tf.concat([x_pos1, x_neg1], axis=1)
+      x_raw2 = tf.concat([x_pos2, x_neg2], axis=1)
 
       with tf.name_scope('predict'):
         y_pred2 = tf.matmul(Wf_new, tf.matmul(Ws, x_raw2))
       with tf.name_scope('loss_slow'):
-        loss_new = sigmoid_loss(y_true, y_pred)
-    '''
+        loss_new = sigmoid_loss(y_true, y_pred2)
+
     sess = tf.Session()
     sess.run(tf.global_variables_initializer())
 
-    # 
-    xnp1 = np.random.normal(size=[dim, batch_size]).astype(np.float32)
-    mu_np = 5. * np.random.normal(size=[dim, 1]).astype(np.float32)
-    '''print 'mu: ', mu_np
-    print 'x1: ', sess.run(x_transform1, feed_dict={x1: xnp1})
-    print 'positive: ', sess.run(x_pos1, feed_dict={x1: xnp1})
-    print 'negative: ', sess.run(x_neg1, feed_dict={x1: xnp1, mu:mu_np})
-    print 'final raw:', sess.run(x_raw1, feed_dict={x1: xnp1, mu:mu_np})'''
-    print 'y: ', y_true.get_shape(), sess.run(y_true)
-    print 'y_pred: ', y_pred.get_shape() #, sess.run(y_true, feed_dict)
-    print 'loss: ', loss.get_shape()
-
-    print sess.run(loss, feed_dict={x1: xnp1, mu:mu_np})
-
-
-    '''# optimizer class
+    # optimizer class
     if old_update_flag:
       optimizer_f = tf.train.GradientDescentOptimizer(lr_fast)
       optimizer_s = tf.train.GradientDescentOptimizer(lr_slow)
@@ -188,28 +175,29 @@ def main(_):
 
       xnp1 = np.random.normal(size=[dim, batch_size]).astype(np.float32)
       xnp2 = np.random.normal(size=[dim, batch_size]).astype(np.float32)
+      munp = np.random.normal(size=[dim, 1]).astype(np.float32)
       
       for i in range(sgd_step):
         if old_update_flag:
           # fast learner update for one step
-          old_loss = sess.run(loss, feed_dict={x1:xnp1, W_true:W_true_np}) #, feed_dict={y_eps: y_eps_np})
+          old_loss = sess.run(loss, feed_dict={x1:xnp1, mu:munp}) #, feed_dict={y_eps: y_eps_np})
           # fast op
-          sess.run(fast_op, feed_dict={x: xnp1, W_true:W_true_np})
-          new_loss = sess.run(loss, feed_dict={x1:xnp1, W_true:W_true_np}) #, feed_dict={y_eps: y_eps_np})
+          sess.run(fast_op, feed_dict={x: xnp1, mu:munp})
+          new_loss = sess.run(loss, feed_dict={x1:xnp1, mu:munp}) #, feed_dict={y_eps: y_eps_np})
 
           # slow learner update
-          old_loss_slow = sess.run(loss, feed_dict={x1:xnp2, W_true:W_true_np})
-          sess.run(slow_op, feed_dict={x:xnp2, W_true:W_true_np})
-          new_loss_slow = sess.run(loss, feed_dict={x1:xnp2, W_true:W_true_np})
+          old_loss_slow = sess.run(loss, feed_dict={x1:xnp2, mu:munp})
+          sess.run(slow_op, feed_dict={x:xnp2, mu:munp})
+          new_loss_slow = sess.run(loss, feed_dict={x1:xnp2, mu:munp})
         else:
           # to monitor loss decrease from 1-sgd fast-learner update
-          old_loss = sess.run(loss, feed_dict={x1:xnp1, W_true:W_true_np}) #, feed_dict={y_eps: y_eps_np})
-          new_loss = sess.run(loss_old_update, feed_dict={x1:xnp1, W_true:W_true_np}) #, feed_dict={y_eps: y_eps_np})
+          old_loss = sess.run(loss, feed_dict={x1:xnp1, mu:munp}) #, feed_dict={y_eps: y_eps_np})
+          new_loss = sess.run(loss_old_update, feed_dict={x1:xnp1, mu:munp}) #, feed_dict={y_eps: y_eps_np})
           
           # slow learner update
-          old_loss_slow = sess.run(loss_new, feed_dict={x1:xnp1, x2:xnp2, W_true:W_true_np})
-          sess.run(slow_op, feed_dict={x1: xnp1, x2:xnp2, W_true:W_true_np})
-          new_loss_slow = sess.run(loss_new, feed_dict={x1:xnp1, x2:xnp2, W_true:W_true_np})
+          old_loss_slow = sess.run(loss_new, feed_dict={x1:xnp1, x2:xnp2, mu:munp})
+          sess.run(slow_op, feed_dict={x1: xnp1, x2:xnp2, mu:munp})
+          new_loss_slow = sess.run(loss_new, feed_dict={x1:xnp1, x2:xnp2, mu:munp})
 
         if (sample_w+1) % visualize_step == 0:
           if print_debug_flag:
@@ -217,13 +205,13 @@ def main(_):
             if old_update_flag:
               print sess.run(Wf, feed_dict={x1:xnp1})
             else:
-              print sess.run(Wf_new, feed_dict={x1:xnp1, W_true:W_true_np})
+              print sess.run(Wf_new, feed_dict={x1:xnp1, mu:munp})
 
             print 'grad slow:'
             if old_update_flag:
-              print sess.run(grad_slow, feed_dict={x:xnp2, W_true:W_true_np})
+              print sess.run(grad_slow, feed_dict={x:xnp2, mu:munp})
             else:
-              print sess.run(grad_slow, feed_dict={x:xnp1, x2:xnp2, W_true:W_true_np})
+              print sess.run(grad_slow, feed_dict={x:xnp1, x2:xnp2, mu:munp})
 
           log.info('fast learner: old / new loss: %f, new loss: %f' % (old_loss, new_loss) )
           log.info('slow learner: old / new loss %f, new loss %f' % (old_loss_slow, new_loss_slow))
@@ -237,7 +225,7 @@ def main(_):
           print True_sigma_inv_reg / lr_fast
         
     # print 'In comparison with the slow learner, the true whitening:', np_transform_inv
-    '''
+    
     sess.close()
 
 if __name__ == '__main__':
