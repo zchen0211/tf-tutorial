@@ -26,7 +26,7 @@ if __name__ == '__main__':
   fx_array = tf.TensorArray(tf.int32, size=unroll_len)
   c = lambda i, _: i<unroll_len
   def time_step(i, fx_array):
-    fx_array = fx_array.write(i, i)
+    fx_array = fx_array.write(i, tf.square(i))
     i = i+1
     return i, fx_array
     
