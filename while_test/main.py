@@ -29,6 +29,10 @@ if __name__ == '__main__':
     fx_array = fx_array.write(i, tf.square(i))
     i = i+1
     return i, fx_array
+  def time_step2(i, fx_array):
+    fx_array = fx_array.write(i, 2*tf.square(i))
+    i = i+1
+    return i, fx_array
     
   _, fx_array = tf.while_loop(cond=c, body=time_step, loop_vars=[0, fx_array])
   # print i # now zero
@@ -36,4 +40,10 @@ if __name__ == '__main__':
   
   sess = tf.Session()
   # sess.run(tf.global_variables_initializer())
+  print sess.run(r)
+
+  sess.run(fx_array.close())
+  _, fx_array = tf.while_loop(cond=c, body=time_step2, loop_vars=[0, fx_array])
+  r = fx_array.stack()
+  log.info('after array close')
   print sess.run(r)
