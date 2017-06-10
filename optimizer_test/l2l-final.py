@@ -4,7 +4,7 @@ import glog as log
 
 
 FLAGS = tf.app.flags.FLAGS
-tf.app.flags.DEFINE_integer('batch_size', 10, 'batch_size')
+tf.app.flags.DEFINE_integer('batch_size', 100, 'batch_size')
 tf.app.flags.DEFINE_integer('dim', 3, 'problem dimension')
 tf.app.flags.DEFINE_integer('sgd_step', 1, 'problem dimension')
 tf.app.flags.DEFINE_float('lr_fast', 2e-1, 'lr of fast learner')
@@ -49,7 +49,8 @@ def main(_):
     transform = tf.constant(np_transform, dtype=tf.float32)
         
     # Slow learner initialization, starting from eye(dim)
-    Ws = tf.get_variable('Ws', dtype=tf.float32, initializer = np.identity(dim).astype(np.float32), trainable=True)
+    Ws_init = np.identity(dim)
+    Ws = tf.get_variable('Ws', dtype=tf.float32, initializer = Ws_init.astype(np.float32), trainable=True)
 
     # Fast learner, re-init to zero for each new task
     Wf = tf.get_variable('Wf', shape=[1, dim], dtype=tf.float32, initializer=tf.constant_initializer(0.), trainable=True) 
