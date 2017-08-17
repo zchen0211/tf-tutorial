@@ -48,13 +48,13 @@ if __name__ == "__main__":
     sess = tf.Session()
     saver = tf.train.Saver(max_to_keep=10)
         
-    sess.run(tf.initialize_all_variables())
+    sess.run(tf.global_variables_initializer())
 
-    summaries = tf.get_collection(tf.GraphKeys.SUMMARIES)
-    for var in tf.all_variables():
-        summaries.append(tf.histogram_summary(var.op.name, var))
-    summary_op = tf.merge_summary(summaries)
-    summary_writer = tf.train.SummaryWriter(FLAGS.save_dir, sess.graph)
+    # summaries = tf.get_collection(tf.GraphKeys.SUMMARIES)
+    # for var in tf.all_variables():
+    #    summaries.append(tf.histogram_summary(var.op.name, var))
+    # summary_op = tf.merge_summary(summaries)
+    summary_writer = tf.summary.FileWriter(FLAGS.save_dir, sess.graph)
     # saver.restore(sess, './omniglot_model/omniglot_model-80000')
 
     for tmp_var in tf.all_variables():
@@ -70,8 +70,8 @@ if __name__ == "__main__":
 
         if (step_i+1) % 100 == 0:
             print("step %d, accuracy %.3f" % (step_i+1, tr_acc))
-            summary_str = sess.run(summary_op)
-            summary_writer.add_summary(summary_str, step_i+1)
+            # summary_str = sess.run(summary_op)
+            # summary_writer.add_summary(summary_str, step_i+1)
 
         # train_op.run(session=sess, feed_dict={xtr: batch[0], ytr_: batch[1]})
 

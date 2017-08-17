@@ -6,6 +6,8 @@ import inception_v4
 import glog as log
 import numpy as np
 
+from parse_imagenet import parse_meta
+
 slim = tf.contrib.slim
 
 tf.app.flags.DEFINE_string(

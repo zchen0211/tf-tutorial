@@ -222,7 +222,7 @@ class CNN():
 		x = tf.placeholder(tf.float32, [None, 28, 28, 1])
 		y_ = tf.placeholder(tf.int64, shape=[None])
 		y = self.deep_embed(x, phase_train=True)
-		cross_entropy_mean = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(y, y_))
+		cross_entropy_mean = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(logits=y, labels=y_))
 		train_accuracy = tf.reduce_mean(tf.cast(tf.equal(tf.argmax(y, 1), y_), tf.float32))
 		return x, y_, cross_entropy_mean, train_accuracy  # loss, accuracy'''
 

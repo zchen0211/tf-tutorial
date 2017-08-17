@@ -6,6 +6,8 @@ import inception_v1
 import glog as log
 import numpy as np
 
+from parse_imagenet import parse_meta
+
 slim = tf.contrib.slim
 
 tf.app.flags.DEFINE_string(
@@ -67,7 +69,7 @@ if __name__ == '__main__':
   # preprocess image
   eval_image_size = inception_v1.inception_v1.default_image_size
   image = preprocess_for_eval(image, eval_image_size, eval_image_size)
-  images = tf.reshape(image, [-1, 224, 224, 3])
+  images = tf.reshape(image, [-1, eval_image_size, eval_image_size, 3])
 
   # define the model
   logits, _ = network_fn(images)
@@ -81,9 +83,15 @@ if __name__ == '__main__':
   # to visualize the network in tensorboard
   summary_writer = tf.summary.FileWriter('.', sess.graph)
 
-  '''log.info('Restoring parameters...')
+  log.info('Restoring parameters...')
   saver.restore(sess, path)
 
   # evaluating
-  result = sess.run(logits)
-  print np.max(result), np.argmax(result) '''
+  result = sess.run(logits) # (1, 1001)
+  # print np.max(result), np.argmax(result)
+
+  result = result.reshape(1001)
+  top_k = result.argsort()[-5:][::-1]
+  id_2_words = parse_meta()
+  for id_ in top_k:
+    log.info('%s (score %f)' %(id_2_words[id_-1], result[id_]))
